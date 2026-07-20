@@ -7,6 +7,8 @@ on:
 
 permissions:
   contents: write
+  id-token: write
+  attestations: write
 
 jobs:
   verify:
@@ -15,11 +17,19 @@ jobs:
   release:
     needs: verify
     runs-on: ubuntu-latest
+    permissions:
+      contents: write
+      id-token: write
+      attestations: write
     steps:
       - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
         with:
           ref: main
           fetch-depth: 0
+      - uses: oven-sh/setup-bun@0c5077e51419868618aeaa5fe8019c62421857d6 # v2
+        with:
+          bun-version: latest
+      - run: bun install --frozen-lockfile
       - name: Sync package version to tag
         run: npm pkg set version="${GITHUB_REF_NAME#v}"
       - name: Update CHANGELOG.md
@@ -39,7 +49,28 @@ jobs:
           commit_message: "chore(release): ${{ github.ref_name }} [skip ci]"
           file_pattern: "CHANGELOG.md package.json"
           branch: main
+      - name: Build web bundle
+        run: bun run build
+      - name: Package web bundle
+        run: tar -czf "broker-manager-web-${GITHUB_REF_NAME}.tgz" -C apps/web/dist .
+      - name: Generate SBOM
+        uses: anchore/sbom-action@e22c389904149dbc22b58101806040fa8d37a610 # v0.24.0
+        with:
+          format: cyclonedx-json
+          output-file: sbom.cdx.json
+      - name: Attest build provenance
+        uses: actions/attest-build-provenance@0f67c3f4856b2e3261c31976d6725780e5e4c373 # v4
+        with:
+          subject-path: broker-manager-web-${{ github.ref_name }}.tgz
+      - name: Attest SBOM
+        uses: actions/attest-sbom@c604332985a26aa8cf1bdc465b92731239ec6b9e # v4
+        with:
+          subject-path: broker-manager-web-${{ github.ref_name }}.tgz
+          sbom-path: sbom.cdx.json
       - name: Publish GitHub Release
         uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2
         with:
           body: ${{ steps.notes.outputs.content }}
+          files: |
+            broker-manager-web-${{ github.ref_name }}.tgz
+            sbom.cdx.json
