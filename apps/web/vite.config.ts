@@ -14,7 +14,7 @@ export default defineConfig({
     globals: false,
     coverage: {
       provider: "v8",
-      reporter: ["text", "html"]
+      reporter: ["text", "html", "json-summary"]
     }
   }
 });
