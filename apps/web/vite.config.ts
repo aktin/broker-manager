@@ -14,7 +14,7 @@ export default defineConfig({
     globals: false,
     coverage: {
       provider: "v8",
-      reporter: ["text", "html", "json-summary"],
+      reporter: ["text", "html"],
       include: ["src/**/*.{ts,vue}"],
       exclude: ["src/main.ts", "src/**/*.d.ts", "src/**/__tests__/**"],
       thresholds: {
