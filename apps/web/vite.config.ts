@@ -14,7 +14,16 @@ export default defineConfig({
     globals: false,
     coverage: {
       provider: "v8",
-      reporter: ["text", "html", "json-summary"]
+      all: true,
+      reporter: ["text", "html", "json-summary"],
+      include: ["src/**/*.{ts,vue}"],
+      exclude: ["src/main.ts", "src/**/*.d.ts", "src/**/__tests__/**"],
+      thresholds: {
+        lines: 80,
+        functions: 80,
+        branches: 80,
+        statements: 80
+      }
     }
   }
 });
