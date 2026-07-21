@@ -52,7 +52,7 @@ jobs:
       - name: Build web bundle
         run: bun run build
       - name: Package web bundle
-        run: tar -czf "broker-manager-web-${GITHUB_REF_NAME}.tgz" -C apps/web/dist .
+        run: tar -czf "${GITHUB_REPOSITORY#*/}-web-${GITHUB_REF_NAME}.tgz" -C apps/web/dist .
       - name: Generate SBOM
         uses: anchore/sbom-action@e22c389904149dbc22b58101806040fa8d37a610 # v0.24.0
         with:
@@ -61,16 +61,16 @@ jobs:
       - name: Attest build provenance
         uses: actions/attest-build-provenance@0f67c3f4856b2e3261c31976d6725780e5e4c373 # v4
         with:
-          subject-path: broker-manager-web-${{ github.ref_name }}.tgz
+          subject-path: ${{ github.event.repository.name }}-web-${{ github.ref_name }}.tgz
       - name: Attest SBOM
         uses: actions/attest-sbom@c604332985a26aa8cf1bdc465b92731239ec6b9e # v4
         with:
-          subject-path: broker-manager-web-${{ github.ref_name }}.tgz
+          subject-path: ${{ github.event.repository.name }}-web-${{ github.ref_name }}.tgz
           sbom-path: sbom.cdx.json
       - name: Publish GitHub Release
         uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2
         with:
           body: ${{ steps.notes.outputs.content }}
           files: |
-            broker-manager-web-${{ github.ref_name }}.tgz
+            ${{ github.event.repository.name }}-web-${{ github.ref_name }}.tgz
             sbom.cdx.json
