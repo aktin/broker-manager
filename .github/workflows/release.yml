@@ -22,7 +22,7 @@ jobs:
       id-token: write
       attestations: write
     steps:
-      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5 # v4
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v4
         with:
           ref: main
           fetch-depth: 0
@@ -33,18 +33,18 @@ jobs:
       - name: Sync package version to tag
         run: npm pkg set version="${GITHUB_REF_NAME#v}"
       - name: Update CHANGELOG.md
-        uses: orhun/git-cliff-action@f50e11560dce63f7c33227798f90b924471a88b5 # v4
+        uses: orhun/git-cliff-action@3d96a18cc4ec17e9dc69ddcc424ccafaf1f78ce2 # v4
         with:
           config: cliff.toml
           args: --output CHANGELOG.md
       - name: Generate release notes
         id: notes
-        uses: orhun/git-cliff-action@f50e11560dce63f7c33227798f90b924471a88b5 # v4
+        uses: orhun/git-cliff-action@3d96a18cc4ec17e9dc69ddcc424ccafaf1f78ce2 # v4
         with:
           config: cliff.toml
           args: --latest --strip all
       - name: Commit changelog and version bump
-        uses: stefanzweifel/git-auto-commit-action@b863ae1933cb653a53c021fe36dbb774e1fb9403 # v5
+        uses: stefanzweifel/git-auto-commit-action@4a55954c782fc1ea30b9056cd3e7a2b40ca8887d # v7.2.0
         with:
           commit_message: "chore(release): ${{ github.ref_name }} [skip ci]"
           file_pattern: "CHANGELOG.md package.json"
@@ -54,12 +54,12 @@ jobs:
       - name: Package web bundle
         run: tar -czf "${GITHUB_REPOSITORY#*/}-web-${GITHUB_REF_NAME}.tgz" -C apps/web/dist .
       - name: Generate SBOM
-        uses: anchore/sbom-action@e22c389904149dbc22b58101806040fa8d37a610 # v0.24.0
+        uses: anchore/sbom-action@3ad7283483fc7af8ff2b4ea19663c2d5ca935e26 # v0.24.2
         with:
           format: cyclonedx-json
           output-file: sbom.cdx.json
       - name: Attest build provenance
-        uses: actions/attest-build-provenance@0f67c3f4856b2e3261c31976d6725780e5e4c373 # v4
+        uses: actions/attest-build-provenance@4d101475d8b20a2381f78447822ac1eab6504dd8 # v4
         with:
           subject-path: ${{ github.event.repository.name }}-web-${{ github.ref_name }}.tgz
       - name: Attest SBOM
@@ -68,7 +68,7 @@ jobs:
           subject-path: ${{ github.event.repository.name }}-web-${{ github.ref_name }}.tgz
           sbom-path: sbom.cdx.json
       - name: Publish GitHub Release
-        uses: softprops/action-gh-release@3bb12739c298aeb8a4eeaf626c5b8d85266b0e65 # v2
+        uses: softprops/action-gh-release@efb35369e0ad2afab669f228072c1b0d510eae64 # v3.0.3
         with:
           body: ${{ steps.notes.outputs.content }}
           files: |
