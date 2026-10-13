@@ -50,7 +50,6 @@ Generating a repo from a template copies files and branches only, never settings
 | Code scanning                     | Runs from `codeql.yml`, keep "Default setup" off in Settings → Code security                                                         | Default setup conflicts with the advanced workflow, private repos need GitHub Advanced Security for the alerts to appear |
 | Secret scanning + push protection | Settings → Code security, on by default for public repos                                                                             | Blocks committed credentials                                                                                             |
 | Dependabot alerts                 | Settings → Code security, enable Dependabot alerts and security updates                                                              | `dependabot.yml` only schedules version updates, the vulnerability alerts and auto-fix PRs are separate toggles          |
-| Private vulnerability reporting   | Settings → Code security, enable                                                                                                     | Gives researchers a private channel instead of a public issue                                                            |
 | Template toggle                   | Leave "Template repository" off if this repo was made from the template                                                              | Prevents re-templating                                                                                                   |
 | Housekeeping                      | Settings → General. Set description and topics, untick Wikis and Projects if unused                                                  | Discoverability, fewer places for stale content                                                                          |
 
@@ -75,7 +74,6 @@ Generating a repo from a template copies files and branches only, never settings
 apps/web/          Vue 3 + Vite app (the default workspace)
 packages/          shared packages (add as needed)
 .github/workflows/ CI, CodeQL, Scorecard, dependency-review, release
-SECURITY.md         how to report a vulnerability
 scripts/init.ts    one-time template initializer (removed after first run)
 ```
 
