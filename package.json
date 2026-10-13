@@ -24,12 +24,10 @@
     "prepare": "lefthook install"
   },
   "devDependencies": {
-    "@commitlint/cli": "^19.4.0",
-    "@commitlint/config-conventional": "^19.4.0",
     "@vue/eslint-config-typescript": "^14.9.0",
     "eslint": "^10.5.0",
     "eslint-plugin-vue": "^10.9.2",
-    "lefthook": "^1.7.0",
+    "lefthook": "^2.1.0",
     "prettier": "^3.8.4",
     "typescript": "^6.0.3"
   }

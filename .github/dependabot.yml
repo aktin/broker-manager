@@ -5,8 +5,9 @@ updates:
     schedule:
       interval: weekly
     groups:
-      dev-dependencies:
-        dependency-type: development
+      npm:
+        patterns:
+          - "*"
   - package-ecosystem: github-actions
     directory: /
     schedule:

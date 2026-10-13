@@ -1,6 +1,5 @@
 dist
 coverage
-.remember
 bun.lock
+.remember
 old
-CHANGELOG.md

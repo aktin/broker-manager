@@ -2,13 +2,16 @@
 
 ## Prerequisites
 
-[bun](https://bun.sh) is the package manager and runtime.
+[bun](https://bun.sh) is the package manager and runtime. The version is pinned in `.bun-version`.
 
 ```sh
 bun install
 ```
 
 This installs dependencies and sets up the git hooks (via lefthook).
+The shared git hooks are Python scripts and need `python3` on PATH. They are
+pulled from the repository configured under `remotes` in `lefthook.yml`, change
+`git_url` and `ref` there to use another source.
 
 ## Development
 
@@ -23,20 +26,17 @@ bun run build      # production build
 
 ## Commits
 
-Commit messages follow [Conventional Commits](https://www.conventionalcommits.org)
-and are enforced by commitlint through the `commit-msg` hook. Examples:
-
-- `feat(web): add request overview table`
-- `fix: correct execution state transition`
-- `chore: bump dependencies`
+Messages follow [Conventional Commits](https://www.conventionalcommits.org),
+enforced by the shared `commit-msg` hook from
+[aktin-github-scripts](https://github.com/aktin/aktin-github-scripts).
 
 ## Pull requests
 
-Before opening a PR, make sure `bun run lint`, `bun run typecheck`, and
-`bun run test` pass. The pre-push hook runs these plus the build.
+Make sure `bun run lint`, `bun run typecheck`, and `bun run test` pass. The
+pre-push hook runs those plus the build.
 
 ## Releases
 
-A release is cut by pushing a `vX.Y.Z` tag. That triggers the release
-workflow, which generates the changelog and notes, builds and attests the
-bundle, and publishes the GitHub Release.
+Push a `vX.Y.Z` tag. The release workflow builds the bundle, generates the
+release notes, produces an SBOM and attestations, and publishes the
+GitHub Release.
