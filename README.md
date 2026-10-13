@@ -6,15 +6,11 @@
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](./LICENSE)
 [![Release](https://img.shields.io/github/v/release/aktin/broker-manager)](https://github.com/aktin/broker-manager/releases)
 
-# Management software for the AKTIN query broker
-
-## Stack
-
-bun workspaces monorepo, Vue 3 + TypeScript (Vite), Vitest, ESLint (flat) + Prettier, lefthook with shared hooks from aktin-github-scripts, tag-driven releases via git-cliff, and a hardened GitHub Actions pipeline (CI, CodeQL, Scorecard, dependency review, SBOM, build attestations).
+Management software for the AKTIN query broker. A bun workspaces monorepo with a Vue 3 and TypeScript web app under `apps/web`.
 
 ## Getting started
 
-Prerequisites: [bun](https://bun.sh) on PATH (the version is pinned in `.bun-version`). The shared git hooks are Python scripts and need `python3` on PATH.
+You need [bun](https://bun.sh) on PATH (the version is pinned in `.bun-version`) and `python3` for the shared git hooks.
 
 ```sh
 bun install        # deps + git hooks
@@ -28,58 +24,67 @@ bun run build      # production build
 
 The coverage report lands in `apps/web/coverage/index.html`.
 
-Commits must follow [Conventional Commits](https://www.conventionalcommits.org), enforced by the commit-msg hook:
+To add a backend or a shared package, create `apps/api` or `packages/shared` with its own `package.json`, extend `tsconfig.base.json`, and the root workspace globs pick it up. Root scripts (`build`, `test`, `typecheck`) fan out to every workspace.
+
+## Commits and releases
+
+Commits follow [Conventional Commits](https://www.conventionalcommits.org), enforced by the commit-msg hook:
 
 ```
 <type>(<optional scope>): <subject>
 ```
 
-Allowed types are `feat fix docs style refactor perf test chore`, the subject starts lowercase and has no trailing period, the header stays at most 100 characters. Cut a release by pushing a `vX.Y.Z` tag.
+Allowed types are `feat fix docs style refactor perf test chore`. The subject starts lowercase, has no trailing period, and the header stays at most 100 characters. Pull requests are squash merged, so one conventional subject per PR lands on `main`.
 
-## Repository settings
+A release is a tag `vX.Y.Z` on `main`. The release workflow builds the tagged commit with the version taken from the tag (`package.json` stays at `0.0.0`), writes the release notes from the commit history with git-cliff, adds a CycloneDX SBOM and build attestations, and attaches the web bundle to the GitHub Release.
 
-Generating a repo from a template copies files and branches only, never settings, so these one-time steps stay manual. Do them after `bun run init`.
+## Checks and gates
 
-| Setting                           | Where and what to do                                                                                                                 | Why                                                                                                                      |
-| --------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------ | ------------------------------------------------------------------------------------------------------------------------ |
-| Branch ruleset on `main`          | Settings → Rules → Rulesets. New branch ruleset targeting `main`: require a pull request, require the `CI` check, block force pushes | Keeps unreviewed or broken code off `main`                                                                               |
-| Tag ruleset on `v*`               | Same screen, new tag ruleset targeting `v*`, restrict creation to maintainers                                                        | Releases are tag-driven, without the rule anyone with push access can cut one                                            |
-| Workflow permissions              | Settings → Actions → General → Read and write                                                                                        | The release workflow creates the GitHub Release and uploads the attestations                                             |
-| Fork PR approval                  | Settings → Actions → General, require approval for outside collaborators                                                             | Keeps untrusted fork code from running workflows before a maintainer has looked                                          |
-| Merge settings                    | Settings → General → Pull Requests. Allow squash merging only, default the commit message to the PR title, auto-delete head branches | One conventional subject per PR lands on `main`, which is what git-cliff reads for the release notes                     |
-| Code scanning                     | Runs from `codeql.yml`, keep "Default setup" off in Settings → Code security                                                         | Default setup conflicts with the advanced workflow, private repos need GitHub Advanced Security for the alerts to appear |
-| Secret scanning + push protection | Settings → Code security, on by default for public repos                                                                             | Blocks committed credentials                                                                                             |
-| Dependabot alerts                 | Settings → Code security, enable Dependabot alerts and security updates                                                              | `dependabot.yml` only schedules version updates, the vulnerability alerts and auto-fix PRs are separate toggles          |
-| Template toggle                   | Leave "Template repository" off if this repo was made from the template                                                              | Prevents re-templating                                                                                                   |
-| Housekeeping                      | Settings → General. Set description and topics, untick Wikis and Projects if unused                                                  | Discoverability, fewer places for stale content                                                                          |
+Three layers. Each layer trusts the one before it a little less.
 
-## How the infra works
+### On your machine
 
-| Component                | What it does                                                                                                                                                                                                                                                      | Why                                                                                             |
-| ------------------------ | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
-| bun monorepo             | `apps/*` + `packages/*`, one lockfile, shared tooling at the root                                                                                                                                                                                                 | Add a backend (`apps/api`) or shared code (`packages/shared`) later without reworking the setup |
-| ESLint (flat) + Prettier | ESLint owns correctness, Prettier owns formatting                                                                                                                                                                                                                 | No rule conflicts, one formatter of record                                                      |
-| Vitest + coverage        | Unit tests with an 80% line gate (`thresholds`)                                                                                                                                                                                                                   | Regressions surface locally and in CI                                                           |
-| lefthook + shared hooks  | pre-commit formats and lints staged files, runs gitleaks when installed and the shared hooks from aktin-github-scripts (data files, large files, commit size), commit-msg enforces Conventional Commits via the shared hook, pre-push runs typecheck, test, build | Catch problems locally, keep history parseable for the changelog                                |
-| CI                       | `ci.yml` calls the reusable `verify.yml` on push and PR, cancels superseded runs, least-privilege token                                                                                                                                                           | Fast, safe feedback                                                                             |
-| Security scans           | CodeQL, dependency-review, OpenSSF Scorecard, secret scanning, all surfaced in the Security tab                                                                                                                                                                   | Catch code and supply-chain issues early                                                        |
-| Releases                 | Tag `vX.Y.Z` builds the tagged commit with the version taken from the tag (`package.json` stays at 0.0.0), git-cliff release notes, CycloneDX SBOM, SLSA attestations, assets attached to the Release                                                             | Reproducible, auditable releases from commit history                                            |
-| Dependabot               | Weekly grouped npm and github-actions updates                                                                                                                                                                                                                     | Stay patched, grouping avoids partial bumps that break paired steps such as CodeQL              |
-| SHA-pinned actions       | Every action is pinned to a full commit SHA with a version comment                                                                                                                                                                                                | A moved tag cannot swap the code, Dependabot keeps the SHAs current                             |
-| Pinned bun               | Runtime version fixed in `.bun-version`                                                                                                                                                                                                                           | Same runtime locally and in CI                                                                  |
+lefthook runs these after `bun install`:
 
-## Project structure
+| When       | What runs                                                                                                                                               | Blocks     |
+| ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------- |
+| pre-commit | ESLint fixes the staged files, Prettier formats them, gitleaks scans for secrets, the shared hooks reject data files, large files and oversized commits | the commit |
+| commit-msg | Conventional Commit header check                                                                                                                        | the commit |
+| pre-push   | `bun run typecheck`, `bun run test` (Vitest with an 80% line coverage threshold), `bun run build`                                                       | the push   |
 
-```
-apps/web/          Vue 3 + Vite app (the default workspace)
-packages/          shared packages (add as needed)
-.github/workflows/ CI, CodeQL, Scorecard, dependency-review, release
-scripts/init.ts    one-time template initializer (removed after first run)
-```
+Hooks can be skipped with `--no-verify`, so nothing here is a guarantee. They exist for fast feedback.
 
-## Adding a backend or shared package
+### On a pull request to `main`
 
-Create `apps/api` or `packages/shared` with its own `package.json`, extend `tsconfig.base.json`, and the root workspace globs pick it up. Root scripts (`build`, `test`, `typecheck`) fan out to every workspace.
+| Check             | Workflow                                                                                   | Required to merge                                                                                              |
+| ----------------- | ------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------- |
+| `verify / verify` | `ci.yml` calls `verify.yml`: Prettier check, ESLint, typecheck, tests with coverage, build | yes                                                                                                            |
+| `review`          | `dependency-review.yml`, fails on new dependencies with high or critical CVEs              | yes                                                                                                            |
+| `analyze`         | `codeql.yml`, CodeQL code scanning                                                         | not as a check, but the ruleset blocks the merge on CodeQL errors or security alerts of severity high or above |
+
+### After a merge and on tags
+
+On every push to `main`, `verify / verify` and `analyze` run again on the merged commit and Scorecard scores the repository and publishes the result to OpenSSF. CodeQL and Scorecard also run weekly.
+
+On a tag `vX.Y.Z`, `release.yml` runs verify, builds the bundle, writes the SBOM and attestations and creates the GitHub Release.
+
+### Gates on `main`
+
+Branch ruleset `default`:
+
+| Rule                     | Meaning                                                                                                                       |
+| ------------------------ | ----------------------------------------------------------------------------------------------------------------------------- |
+| Pull request required    | No direct pushes. Squash merge only, 1 approval, code owner review, approval after the last push, all review threads resolved |
+| Required checks          | `verify / verify` and `review` must pass                                                                                      |
+| Code scanning            | CodeQL must have analysed the head commit without errors or security alerts of severity high or above                         |
+| Signed commits           | Every commit on `main` is signed. Squash merges are signed by GitHub                                                          |
+| No force push, no delete | History on `main` is append-only                                                                                              |
+
+Approvals come from people. GitHub Actions cannot create or approve pull requests, auto-merge is off, and no app or bot is on the bypass list. Organisation admins can bypass every rule. Other branches have no rules.
+
+### Gates on tags `v*`
+
+Tag ruleset `release-tags`: only maintainers and admins can create, move or delete release tags. A tag starts the release workflow, so this decides who can cut a release.
 
 ## License
 
