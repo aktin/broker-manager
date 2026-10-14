@@ -29,7 +29,6 @@ pre-commit:
         fi
 
 pre-push:
-  parallel: false
   commands:
     typecheck:
       run: PATH="$HOME/.bun/bin:$PATH" bun run typecheck
