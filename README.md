@@ -46,11 +46,13 @@ Three layers. Each layer trusts the one before it a little less.
 
 lefthook runs these after `bun install`:
 
-| When       | What runs                                                                                                                                               | Blocks     |
-| ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------- |
-| pre-commit | ESLint fixes the staged files, Prettier formats them, gitleaks scans for secrets, the shared hooks reject data files, large files and oversized commits | the commit |
-| commit-msg | Conventional Commit header check                                                                                                                        | the commit |
-| pre-push   | `bun run typecheck`, `bun run test` (Vitest with an 80% line coverage threshold), `bun run build`                                                       | the push   |
+The shared hooks need `python3`, `gitleaks` and `actionlint` on PATH. A missing tool fails the commit.
+
+| When       | What runs                                                                                                                                                                                                  | Blocks     |
+| ---------- | ---------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------- |
+| pre-commit | ESLint fixes the staged files, Prettier formats them, the shared hooks scan for secrets with gitleaks, lint staged workflow files with actionlint and reject data files, large files and oversized commits | the commit |
+| commit-msg | Conventional Commit header check                                                                                                                                                                           | the commit |
+| pre-push   | `bun run typecheck`, `bun run test` (Vitest with an 80% line coverage threshold), `bun run build`                                                                                                          | the push   |
 
 Hooks can be skipped with `--no-verify`, so nothing here is a guarantee. They exist for fast feedback.
 

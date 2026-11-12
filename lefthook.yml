@@ -20,13 +20,6 @@ pre-commit:
       glob: "*.{ts,vue,js,mjs,cjs,json,md,yml,yaml,css}"
       run: PATH="$HOME/.bun/bin:$PATH" bunx prettier --write {staged_files}
       stage_fixed: true
-    gitleaks:
-      run: |
-        if command -v gitleaks >/dev/null 2>&1; then
-          gitleaks protect --staged --redact --verbose
-        else
-          echo "gitleaks not installed, skipping secret scan"
-        fi
 
 pre-push:
   commands:
