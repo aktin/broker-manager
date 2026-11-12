@@ -46,13 +46,13 @@ Three layers. Each layer trusts the one before it a little less.
 
 lefthook runs these after `bun install`:
 
-The shared hooks need `python3`, `gitleaks` and `actionlint` on PATH, the hooks of this repository need `hadolint` and `shellcheck`. A missing tool fails the commit.
+All hooks come from aktin-github-scripts. They need `python3`, `gitleaks`, `actionlint`, `hadolint` and `shellcheck` on PATH. A missing tool fails the commit, hadolint and shellcheck are only called when a Dockerfile or shell script is staged.
 
-| When       | What runs                                                                                                                                                                                                                                                                                    | Blocks     |
-| ---------- | -------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ---------- |
-| pre-commit | ESLint fixes the staged files, Prettier formats them, hadolint lints the staged Dockerfiles, shellcheck lints the staged shell scripts, the shared hooks scan for secrets with gitleaks, lint staged workflow files with actionlint and reject data files, large files and oversized commits | the commit |
-| commit-msg | Conventional Commit header check                                                                                                                                                                                                                                                             | the commit |
-| pre-push   | `bun run typecheck`, `bun run test` (Vitest with an 80% line coverage threshold), `bun run build`                                                                                                                                                                                            | the push   |
+| When       | What runs                                                                                                                                                                                                                                                    | Blocks     |
+| ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------- |
+| pre-commit | ESLint fixes the staged files, Prettier formats them, gitleaks scans for secrets, actionlint, hadolint and shellcheck lint the staged workflow files, Dockerfiles and shell scripts, the shared scripts reject data files, large files and oversized commits | the commit |
+| commit-msg | Conventional Commit header check                                                                                                                                                                                                                             | the commit |
+| pre-push   | `bun run typecheck`, `bun run test` (Vitest with an 80% line coverage threshold), `bun run build`                                                                                                                                                            | the push   |
 
 Hooks can be skipped with `--no-verify`, so nothing here is a guarantee. They exist for fast feedback.
 
