@@ -1,7 +1,7 @@
 # broker-manager
 
-[![CI](https://github.com/aktin/broker-manager/actions/workflows/ci.yml/badge.svg)](https://github.com/aktin/broker-manager/actions/workflows/ci.yml)
-[![CodeQL](https://github.com/aktin/broker-manager/actions/workflows/codeql.yml/badge.svg)](https://github.com/aktin/broker-manager/actions/workflows/codeql.yml)
+[![Verify](https://github.com/aktin/broker-manager/actions/workflows/verify.yml/badge.svg)](https://github.com/aktin/broker-manager/actions/workflows/verify.yml)
+[![CodeQL](https://github.com/aktin/broker-manager/actions/workflows/scan-codeql.yml/badge.svg)](https://github.com/aktin/broker-manager/actions/workflows/scan-codeql.yml)
 [![OpenSSF Scorecard](https://api.securityscorecards.dev/projects/github.com/aktin/broker-manager/badge)](https://securityscorecards.dev/viewer/?uri=github.com/aktin/broker-manager)
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](./LICENSE)
 [![Release](https://img.shields.io/github/v/release/aktin/broker-manager)](https://github.com/aktin/broker-manager/releases)
@@ -10,7 +10,7 @@ Management software for the AKTIN query broker. A bun workspaces monorepo with a
 
 ## Getting started
 
-You need [bun](https://bun.sh) on PATH (the version is pinned in `.bun-version`) and `python3` for the shared git hooks.
+You need [bun](https://bun.sh) on PATH (the version is pinned in `.bun-version`) and the tools that the git hooks call. They are listed under [On your machine](#on-your-machine).
 
 ```sh
 bun install        # deps + git hooks
@@ -34,19 +34,30 @@ Commits follow [Conventional Commits](https://www.conventionalcommits.org), enfo
 <type>(<optional scope>): <subject>
 ```
 
-Allowed types are `feat fix docs style refactor perf test chore`. The subject starts lowercase, has no trailing period, and the header stays at most 100 characters. Pull requests are squash merged, so one conventional subject per PR lands on `main`.
+Example: `feat(web): add the login form`
 
-A release is a tag `vX.Y.Z` on `main`. The release workflow builds the tagged commit with the version taken from the tag (`package.json` stays at `0.0.0`), writes the release notes from the commit history with git-cliff, adds a CycloneDX SBOM and build attestations, and attaches the web bundle to the GitHub Release.
+Allowed types are `feat fix docs style refactor perf test chore`. The subject starts lowercase, has no trailing period, and every line of the message stays at most 100 characters. Pull requests into `dev` are squash merged, so one conventional subject per PR lands on `dev`. `dev` is merged into `main` with a merge commit.
+
+A release is a tag `vX.Y.Z` on `main`, for example `v1.2.3`. The release workflow takes the version from the tag (`package.json` stays at `0.0.0`) and attaches the web bundle and its CycloneDX SBOM to the GitHub Release. Its jobs are described in [.github/workflows/README.md](.github/workflows/README.md#workflows).
+
+To check that a downloaded web bundle was built by the release workflow, verify its build provenance with the [GitHub CLI](https://cli.github.com):
+
+```sh
+gh attestation verify broker-manager-web-<tag>.tgz --repo aktin/broker-manager --signer-repo aktin/aktin-github-scripts
+
+# Example:
+# gh attestation verify broker-manager-web-v1.2.3.tgz --repo aktin/broker-manager --signer-repo aktin/aktin-github-scripts
+```
+
+`--signer-repo` is needed because the attestation is signed by the shared workflow in aktin-github-scripts, not by a workflow of this repository.
 
 ## Checks and gates
 
-Three layers. Each layer trusts the one before it a little less.
+Three layers. Each layer trusts the one before it a little less. The first layer, the git hooks on your machine, is described here. The checks on pull requests, the workflows, Dependabot and the rules on `main`, `dev` and release tags are described in [.github/workflows/README.md](.github/workflows/README.md).
 
 ### On your machine
 
-lefthook runs these after `bun install`:
-
-All hooks come from aktin-github-scripts. They need `python3`, `gitleaks`, `actionlint`, `hadolint` and `shellcheck` on PATH. A missing tool fails the commit, hadolint and shellcheck are only called when a Dockerfile or shell script is staged.
+`bun install` installs the git hooks. [lefthook](https://lefthook.dev) runs them and takes all of them from [aktin-github-scripts](https://github.com/aktin/aktin-github-scripts#git-hooks), see `lefthook.yml`. They need `python3`, `gitleaks`, `actionlint`, `hadolint` and `shellcheck` on PATH. A missing tool fails the commit. actionlint, hadolint and shellcheck are only called when a workflow file, Dockerfile or shell script is staged.
 
 | When       | What runs                                                                                                                                                                                                                                                    | Blocks     |
 | ---------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ | ---------- |
@@ -55,38 +66,6 @@ All hooks come from aktin-github-scripts. They need `python3`, `gitleaks`, `acti
 | pre-push   | `bun run typecheck`, `bun run test` (Vitest with an 80% line coverage threshold), `bun run build`                                                                                                                                                            | the push   |
 
 Hooks can be skipped with `--no-verify`, so nothing here is a guarantee. They exist for fast feedback.
-
-### On a pull request to `main`
-
-| Check             | Workflow                                                                                   | Required to merge                                                                                              |
-| ----------------- | ------------------------------------------------------------------------------------------ | -------------------------------------------------------------------------------------------------------------- |
-| `verify / verify` | `ci.yml` calls `verify.yml`: Prettier check, ESLint, typecheck, tests with coverage, build | yes                                                                                                            |
-| `review`          | `dependency-review.yml`, fails on new dependencies with high or critical CVEs              | yes                                                                                                            |
-| `analyze`         | `codeql.yml`, CodeQL code scanning                                                         | not as a check, but the ruleset blocks the merge on CodeQL errors or security alerts of severity high or above |
-
-### After a merge and on tags
-
-On every push to `main`, `verify / verify` and `analyze` run again on the merged commit and Scorecard scores the repository and publishes the result to OpenSSF. CodeQL and Scorecard also run weekly.
-
-On a tag `vX.Y.Z`, `release.yml` runs verify, builds the bundle, writes the SBOM and attestations and creates the GitHub Release.
-
-### Gates on `main`
-
-Branch ruleset `default`:
-
-| Rule                     | Meaning                                                                                                                       |
-| ------------------------ | ----------------------------------------------------------------------------------------------------------------------------- |
-| Pull request required    | No direct pushes. Squash merge only, 1 approval, code owner review, approval after the last push, all review threads resolved |
-| Required checks          | `verify / verify` and `review` must pass                                                                                      |
-| Code scanning            | CodeQL must have analysed the head commit without errors or security alerts of severity high or above                         |
-| Signed commits           | Every commit on `main` is signed. Squash merges are signed by GitHub                                                          |
-| No force push, no delete | History on `main` is append-only                                                                                              |
-
-Approvals come from people. GitHub Actions cannot create or approve pull requests, auto-merge is off, and no app or bot is on the bypass list. Organisation admins can bypass every rule. Other branches have no rules.
-
-### Gates on tags `v*`
-
-Tag ruleset `release-tags`: only maintainers and admins can create, move or delete release tags. A tag starts the release workflow, so this decides who can cut a release.
 
 ## License
 
