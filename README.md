@@ -53,7 +53,7 @@ gh attestation verify broker-manager-web-<tag>.tgz --repo aktin/broker-manager -
 
 ## Checks and gates
 
-Three layers. Each layer trusts the one before it a little less. The first layer, the git hooks on your machine, is described here. The checks on pull requests, the workflows, Dependabot and the rules on `main`, `dev` and release tags are described in [.github/workflows/README.md](.github/workflows/README.md).
+A change passes three layers: the git hooks on your machine, the checks on the pull request and the rules on the branch. Anyone can skip the hooks, only organisation admins can bypass the checks and the rules. The hooks are described here. The checks on pull requests, the workflows, Dependabot and the rules on `main`, `dev` and release tags are described in [.github/workflows/README.md](.github/workflows/README.md).
 
 ### On your machine
 

@@ -13,7 +13,7 @@ All checks start on their own. A pull request can be merged when the checks mark
 | `verify / bun`           | `verify.yml`, Prettier check, ESLint, typecheck, tests with coverage, build                                     | not as a check, but `verify / verify` fails when it fails                                                                |
 | `review / review`        | `scan-dependencies.yml`, fails on new dependencies with a known vulnerability of severity high or critical      | yes                                                                                                                      |
 | `analyze / analyze`      | `scan-codeql.yml`, CodeQL scan of the JavaScript and TypeScript code                                            | not as a check, but the ruleset on `main` blocks the merge on CodeQL errors or security alerts of severity high or above |
-| `CodeQL`                 | Posted by GitHub code scanning with the result of the CodeQL scan                                               | not as a check, but the ruleset on `main` blocks the merge on CodeQL errors or security alerts of severity high or above |
+| `CodeQL`                 | Posted by GitHub code scanning with the result of the CodeQL scan                                               | no                                                                                                                       |
 
 ## Workflows
 
