@@ -57,6 +57,9 @@ Three layers. Each layer trusts the one before it a little less. The first layer
 
 ### On your machine
 
+> [!CAUTION]
+> Run `bun install` once after cloning, before your first commit. It runs `lefthook install`. Without it no git hook runs on your machine.
+
 `bun install` installs the git hooks. [lefthook](https://lefthook.dev) runs them and takes all of them from [aktin-github-scripts](https://github.com/aktin/aktin-github-scripts#git-hooks), see `lefthook.yml`. They need `python3`, `gitleaks`, `actionlint`, `hadolint` and `shellcheck` on PATH. A missing tool fails the commit. actionlint, hadolint and shellcheck are only called when a workflow file, Dockerfile or shell script is staged.
 
 | When       | What runs                                                                                                                                                                                                                                                    | Blocks     |
