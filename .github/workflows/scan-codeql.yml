@@ -21,4 +21,4 @@ jobs:
   analyze:
     uses: aktin/aktin-github-scripts/.github/workflows/scan-codeql.yml@main
     with:
-      languages: javascript-typescript
+      languages: javascript-typescript,actions
